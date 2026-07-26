@@ -20,8 +20,7 @@ export default async function handler(req, res) {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        
-  'Authorization': `Bearer ${apiKey ? apiKey.trim() : ''}`,
+         'Authorization': `Bearer ${apiKey}`
   'Content-Type': 'application/json',
   'HTTP-Referer': 'https://ai-snack-pizza-chef.vercel.app',
   'X-Title': 'AI Snack Pizza Chef'

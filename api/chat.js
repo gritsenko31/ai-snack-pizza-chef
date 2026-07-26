@@ -20,11 +20,12 @@ export default async function handler(req, res) {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        // Опциональные заголовки для OpenRouter:
-        'HTTP-Referer': req.headers.origin || 'https://vercel.app',
-        'X-Title': 'Chess Game Project'
+        
+  'Authorization': `Bearer ${apiKey ? apiKey.trim() : ''}`,
+  'Content-Type': 'application/json',
+  'HTTP-Referer': 'https://ai-snack-pizza-chef.vercel.app',
+  'X-Title': 'AI Snack Pizza Chef'
+}
       },
       body: JSON.stringify({
         model: model || 'openai/gpt-3.5-turbo', // Ваш дефолтный промпт/модель

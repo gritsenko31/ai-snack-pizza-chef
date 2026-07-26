@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍕 AI Snack & Pizza Chef 🍔</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===== SETTINGS MODAL ===== -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <button class="modal-close" id="close-settings">✕</button>
+      <h2>⚙️ Settings</h2>
+      <p class="modal-desc">Enter your <strong>OpenRouter API Key</strong> below.<br/>Leave blank to use the default key.</p>
+      <input
+        type="password"
+        id="api-key-input"
+        placeholder="sk-or-v1-..."
+        autocomplete="off"
+      />
+      <div class="modal-actions">
+        <button class="btn btn-save" id="save-api-key">💾 Save Key</button>
+        <button class="btn btn-clear" id="clear-api-key">🗑️ Clear</button>
+      </div>
+      <p class="key-status" id="key-status"></p>
+    </div>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="logo-emoji">🍕</span>
+      <div class="header-titles">
+        <h1 class="app-title">AI Snack &amp; Pizza Chef</h1>
+        <p class="app-subtitle">Describe your dish — the more details, the better!</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="level-badge" id="level-badge">⭐ Level <span id="current-level-num">1</span></div>
+      <button class="settings-btn" id="open-settings" title="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN GAME AREA ===== -->
+  <main class="game-container">
+
+    <!-- LEFT COLUMN: Order Card + Prompt Input -->
+    <section class="left-panel">
+
+      <!-- ORDER CARD -->
+      <div class="order-card" id="order-card">
+        <div class="order-card-header">
+          <span class="customer-avatar" id="customer-avatar">👧</span>
+          <div>
+            <div class="order-label">Customer Order</div>
+            <div class="level-tag" id="level-tag">Level 1 — Sandwich</div>
+          </div>
+        </div>
+        <div class="order-bubble" id="order-bubble">
+          <p id="order-text">Loading order...</p>
+        </div>
+        <div class="order-hint" id="order-hint">
+          <span class="hint-icon">💡</span>
+          <span id="hint-text">Try to include: bread type, ingredients, and colors!</span>
+        </div>
+      </div>
+
+      <!-- PROMPT INPUT AREA -->
+      <div class="prompt-section">
+        <label class="prompt-label" for="prompt-input">
+          🧑‍🍳 Your Recipe Description:
+        </label>
+        <textarea
+          id="prompt-input"
+          class="prompt-textarea"
+          placeholder="Describe the meal in detail here... e.g. 'A big sandwich on toasted golden bread with melted yellow cheese, fresh red tomatoes, crispy green lettuce and creamy white mayo!'"
+          rows="5"
+          maxlength="500"
+        ></textarea>
+        <div class="char-counter"><span id="char-count">0</span> / 500 characters</div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="action-buttons">
+          <button class="btn btn-cook" id="cook-btn">
+            <span class="btn-icon">🍳</span> Cook It! Run AI
+          </button>
+          <button class="btn btn-clear-prompt" id="clear-prompt-btn">
+            🗑️ Clear
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: Completeness Meter + Result -->
+    <section class="right-panel">
+
+      <!-- PROMPT COMPLETENESS METER -->
+      <div class="meter-card">
+        <h3 class="meter-title">📊 Prompt Completeness</h3>
+        <div class="meter-bar-wrap">
+          <div class="meter-bar" id="meter-bar">
+            <div class="meter-fill" id="meter-fill" style="width:0%"></div>
+          </div>
+          <span class="meter-percent" id="meter-percent">0%</span>
+        </div>
+        <ul class="checklist" id="checklist">
+          <!-- Populated by JS -->
+        </ul>
+      </div>
+
+      <!-- DISH PREVIEW -->
+      <div class="dish-preview" id="dish-preview">
+        <div class="dish-plate" id="dish-plate">
+          <div class="dish-emoji-big" id="dish-emoji">🍽️</div>
+          <p class="dish-waiting-text" id="dish-waiting-text">Your dish will appear here after cooking!</p>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== RESULT SCREEN (overlay) ===== -->
+  <div id="result-overlay" class="result-overlay hidden">
+    <div class="result-box">
+      <button class="result-close" id="result-close">✕</button>
+
+      <div class="result-stars" id="result-stars">
+        <!-- Stars rendered by JS -->
+      </div>
+
+      <div class="result-dish-emoji" id="result-dish-emoji">🍔</div>
+
+      <h2 class="result-title" id="result-title">Great Job!</h2>
+      <p class="result-feedback" id="result-feedback">Loading feedback...</p>
+
+      <div class="result-found" id="result-found-wrap">
+        <h4>✅ Ingredients Found:</h4>
+        <div class="tags-wrap" id="result-found-tags"></div>
+      </div>
+
+      <div class="result-missing" id="result-missing-wrap">
+        <h4>💡 You could also add:</h4>
+        <div class="tags-wrap" id="result-missing-tags"></div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn btn-retry" id="retry-btn">🔄 Try Again</button>
+        <button class="btn btn-next" id="next-level-btn">➡️ Next Level</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOADING OVERLAY ===== -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p class="loading-text">🤖 AI Chef is judging your recipe...</p>
+      <p class="loading-sub">This takes a few seconds!</p>
+    </div>
+  </div>
+
+  <!-- ===== LEVEL COMPLETE BANNER ===== -->
+  <div id="level-complete-banner" class="level-banner hidden">
+    <span>🎉 Level Complete! Moving to next level... 🎉</span>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

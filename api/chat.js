@@ -20,14 +20,13 @@ export default async function handler(req, res) {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-         'Authorization': `Bearer ${apiKey}`
-  'Content-Type': 'application/json',
-  'HTTP-Referer': 'https://ai-snack-pizza-chef.vercel.app',
-  'X-Title': 'AI Snack Pizza Chef'
-}
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://ai-snack-pizza-chef.vercel.app',
+        'X-Title': 'AI Snack Pizza Chef'
       },
       body: JSON.stringify({
-        model: model || 'openai/gpt-3.5-turbo', // Ваш дефолтный промпт/модель
+        model: model || 'openai/gpt-3.5-turbo',
         messages: messages
       })
     });
@@ -35,6 +34,7 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('OpenRouter Detailed Error:', data);
       return res.status(response.status).json({ error: data.error || 'OpenRouter API Error' });
     }
 

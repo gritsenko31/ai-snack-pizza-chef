@@ -410,7 +410,7 @@ function updateDishPreview(text, pct, level) {
 }
 
 // ─────────────────────────────────────────────
-//  COOK — CALL OPENROUTER API
+//  COOK — CALL VERCEL SERVERLESS BACKEND (/api/chat)
 // ─────────────────────────────────────────────
 async function cookDish() {
   const prompt = DOM.promptInput.value.trim();
@@ -424,80 +424,64 @@ async function cookDish() {
     return;
   }
 
-  const level  = LEVELS[currentLevelIndex];
-  const apiKey = userApiKey || DEFAULT_API_KEY;
+  const level = LEVELS[currentLevelIndex];
 
   showLoading(true);
   DOM.cookBtn.disabled = true;
 
-  let lastError = null;
-
-  for (const model of MODEL_FALLBACKS) {
-    try {
-      console.log(`Trying model: ${model}`);
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type':  'application/json',
-          'HTTP-Referer':  window.location.href,
-          'X-Title':       'AI Snack & Pizza Chef'
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: 'system',
-              content: level.systemPrompt
-            },
-            {
-              role: 'user',
-              content: `Child's prompt: "${prompt}"`
-            }
-          ],
-          temperature: 0.4,
-          max_tokens:  400
-        })
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        const msg = errData?.error?.message || `HTTP ${response.status}`;
-        // If model not found / unavailable, try next fallback
-        if (response.status === 404 || response.status === 400 || response.status === 503) {
-          console.warn(`Model ${model} unavailable (${msg}), trying next fallback...`);
-          lastError = new Error(msg);
-          continue;
-        }
-        throw new Error(msg);
+  try {
+    // 1. Формируем сообщения для ИИ
+    const messages = [
+      {
+        role: 'system',
+        content: level.systemPrompt
+      },
+      {
+        role: 'user',
+        content: `Child's prompt: "${prompt}"`
       }
+    ];
 
-      const data    = await response.json();
-      const rawText = data?.choices?.[0]?.message?.content || '';
+    // 2. Если пользователь ввёл собственный ключ в Настройках — передаём его,
+    //    иначе бэкенд Vercel сам подтянет OPENROUTER_API_KEY из своих Environment Variables!
+    const payload = {
+      messages: messages,
+      model: 'openai/gpt-3.5-turbo'
+    };
 
-      // Parse JSON from response
-      const result = parseAIResponse(rawText);
-      showResult(result, level);
-
-      // Success — exit loop
-      showLoading(false);
-      DOM.cookBtn.disabled = false;
-      return;
-
-    } catch (err) {
-      // Network error or non-retryable error — try next model
-      console.warn(`Model ${model} failed:`, err.message);
-      lastError = err;
+    if (userApiKey) {
+      payload.apiKey = userApiKey;
     }
+
+    // 3. Делаем запрос к НАШЕМУ бэкенду на Vercel
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || data.error || `HTTP ${response.status}`);
+    }
+
+    // 4. Получаем текст ответа от ИИ
+    const rawText = data?.choices?.[0]?.message?.content || '';
+
+    // 5. Парсим JSON и показываем результат
+    const result = parseAIResponse(rawText);
+    showResult(result, level);
+
+  } catch (err) {
+    console.error('Ошибка при генерации блюда:', err);
+    showErrorResult(err.message || 'AI service unavailable. Please try again later.');
+  } finally {
+    showLoading(false);
+    DOM.cookBtn.disabled = false;
   }
-
-  // All models failed
-  console.error('All models failed. Last error:', lastError);
-  showErrorResult(lastError?.message || 'All AI models are unavailable. Please try again later.');
-
-  showLoading(false);
-  DOM.cookBtn.disabled = false;
 }
 
 // ─────────────────────────────────────────────

@@ -8,13 +8,31 @@
 // ─────────────────────────────────────────────
 //  CONFIG
 // ─────────────────────────────────────────────
-const DEFAULT_API_KEY  = 'sk-or-v1-YOUR_OPENROUTER_API_KEY_HERE';
-const API_URL          = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL_FALLBACKS  = [
-  'anthropic/claude-3.5-haiku',
-  'anthropic/claude-3-haiku',
-  'google/gemini-flash-1.5'
-];
+async function askAI(messages) {
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: messages
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || data.error || 'Ошибка при вызове сервера');
+    }
+
+    return data.choices[0].message.content;
+
+  } catch (error) {
+    console.error('Ошибка получения ответа:', error);
+    return null;
+  }
+}
 
 // ─────────────────────────────────────────────
 //  LEVEL DATA
